@@ -3,4 +3,5 @@
     <string name="todo_example">What would you like to add?</string>
     <string name="delete">Delete</string>
     <string name="add">Add</string>
+    <string name="call">Call </string>
 </resources>

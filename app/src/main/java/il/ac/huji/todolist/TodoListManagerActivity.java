@@ -1,6 +1,7 @@
 package il.ac.huji.todolist;
 
-import android.graphics.Color;
+import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -8,42 +9,28 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
+/** TodoListManagerActivity class */
 public class TodoListManagerActivity extends AppCompatActivity {
 
-    ArrayList<String> todoItems;
-    ArrayAdapter<String> adapter;
+    static final int ADD_ACTIVITY = 1;
+    ArrayList<ListRow> todoItems;
+    ListViewAdapter adapter;
 
+    /** TodoListManagerActivity onCreate function */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_todo_list_manager);
-        todoItems = new ArrayList<String>(0);
+        todoItems = new ArrayList<ListRow>(0);
 
-         adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_list_item_1, todoItems){
-             @Override
-             public View getView(int position, View convertView, ViewGroup parent) {
-                 TextView v = (TextView)super.getView(position, convertView, parent);
-                 if (position%2 == 0) {
-                     v.setTextColor(Color.RED);
-                 } else {
-                     v.setTextColor(Color.BLUE);
-                 }
-
-                 return v;
-             }
-         };
-
+        // Set a new adapter for a custom 2-columns ListView
+        adapter = new ListViewAdapter(this, todoItems);
 
         ListView listView = (ListView) findViewById(R.id.lstTodoItems);
         listView.setAdapter(adapter);
@@ -51,7 +38,7 @@ public class TodoListManagerActivity extends AppCompatActivity {
         registerForContextMenu(listView);
     }
 
-
+    /** TodoListManagerActivity onCreateOptionsMenu function */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -59,25 +46,36 @@ public class TodoListManagerActivity extends AppCompatActivity {
         return true;
     }
 
+    /** Get get extras from AddNewTodoItemActivity using intent. */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        // Check which request we're responding to
+        if (requestCode == ADD_ACTIVITY) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                String title = intent.getStringExtra("title");
+//                Date date = intent.getExtras("dueDate");
+                Date date = (Date)intent.getSerializableExtra("dueDate");
+
+                addTask(title, date);
+
+            }
+        }
+    }
+
+    /**
+     * main menu options (add button)
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menuItemAdd:
 
-                EditText edtNewItem = (EditText) findViewById(R.id.edtNewItem);
+                Intent intent = new Intent(this, AddNewTodoItemActivity.class);
+                intent.putExtra("title", "");
+                intent.putExtra("dueDate", "");
+                startActivityForResult(intent, ADD_ACTIVITY);
 
-                String addTxt = edtNewItem.getText().toString();
-                if (!"".equals(addTxt)){
-                    todoItems.add(addTxt);
-                    edtNewItem.setText("");
-                    adapter.notifyDataSetChanged();
-                    Toast.makeText(getApplicationContext(), "Task Added", Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "Task is empty", Toast.LENGTH_LONG).show();
-                }
-
-                return true;
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -87,13 +85,19 @@ public class TodoListManagerActivity extends AppCompatActivity {
     /**
      * Called when the user clicks the Add button.
      */
-    public void addItem(View view) {
-        EditText edtNewItem = (EditText) findViewById(R.id.edtNewItem);
+    public void addTask(String title, Date dateObj) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
 
-        String addTxt = edtNewItem.getText().toString();
-        if (!"".equals(addTxt)){
-            todoItems.add(addTxt);
-            edtNewItem.setText("");
+        String date;
+
+        if (dateObj == null){
+            date = "No Due Date";
+        } else {
+            date = dateFormat.format(dateObj);
+        }
+
+        if (!"".equals(title)){
+            todoItems.add(new ListRow(title, date));
             adapter.notifyDataSetChanged();
         }
     }
@@ -116,8 +120,16 @@ public class TodoListManagerActivity extends AppCompatActivity {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
         int position = info.position;
 
-        menu.setHeaderTitle(list.getItemAtPosition(position).toString());
+        ListRow itemSelected = (ListRow)list.getItemAtPosition(position);
 
+        menu.setHeaderTitle(itemSelected.txtTodoTitle);
+
+        // Hide Call item on context menu
+        if (!itemSelected.txtTodoTitle.startsWith("Call ")){
+            menu.findItem(R.id.menuItemCall).setVisible(false);
+        } else {
+            menu.findItem(R.id.menuItemCall).setTitle(itemSelected.txtTodoTitle);
+        }
     }
 
 
@@ -133,8 +145,13 @@ public class TodoListManagerActivity extends AppCompatActivity {
             case R.id.menuItemDelete:
                 todoItems.remove(position);
                 adapter.notifyDataSetChanged();
-                Toast.makeText(getApplicationContext(), "Task Deleted", Toast.LENGTH_LONG).show();
                 return true;
+            case R.id.menuItemCall:
+                String numberStr = item.getTitle().toString().substring(5).trim();
+                Uri number = Uri.parse("tel:" + numberStr);
+                Intent callIntent = new Intent(Intent.ACTION_DIAL, number);
+                startActivity(callIntent);
+
             default:
                 return super.onContextItemSelected(item);
         }
