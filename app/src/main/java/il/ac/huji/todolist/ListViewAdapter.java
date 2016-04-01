@@ -23,7 +23,6 @@ import java.util.Date;
  */
 public class ListViewAdapter extends ArrayAdapter<ListRow> {
 
-
     public ListViewAdapter(Context context, ArrayList<ListRow> list) {
         super(context, android.R.layout.simple_list_item_1, list);
     }
