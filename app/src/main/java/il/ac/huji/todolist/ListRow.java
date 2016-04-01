@@ -9,8 +9,10 @@ public class ListRow {
 
     public String txtTodoTitle;
     public String txtTodoDueDate;
+    public long _id;
 
-    public ListRow(String txtTodoTitle, String txtTodoDueDate){
+    public ListRow(long id, String txtTodoTitle, String txtTodoDueDate){
+        this._id = id;
         this.txtTodoDueDate = txtTodoDueDate;
         this.txtTodoTitle = txtTodoTitle;
     }
