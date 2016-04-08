@@ -1,8 +1,7 @@
 package il.ac.huji.todolist;
 import android.content.Context;
 import android.database.sqlite.*;
-
-
+import android.util.Log;
 
 
 /**
@@ -30,6 +29,7 @@ public class DBHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
     public void onCreate(SQLiteDatabase db) {
+        Log.v("DBHelper: ", "onCreate");
         db.execSQL(SQL_CREATE_ENTRIES);
     }
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {

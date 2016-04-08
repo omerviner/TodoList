@@ -14,6 +14,7 @@ import java.util.Date;
  */
 public class AddNewTodoItemActivity extends Activity{
     Intent intent;
+
     public void onCreate(Bundle unused){
         super.onCreate(unused);
         setContentView(R.layout.add_item_layout);

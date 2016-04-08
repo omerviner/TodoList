@@ -5,14 +5,15 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -32,6 +33,70 @@ public class TodoListManagerActivity extends AppCompatActivity {
     SQLiteDatabase db;
     SimpleDateFormat dateFormat;
 
+    /**
+     * Data object for task information.
+     * Used by LoadDBTask(AsyncTask)
+     */
+    private class InsertTask{
+        long id;
+        String title;
+        Date date;
+
+        /**
+         * InserTask constructor.
+         */
+        public InsertTask(long id, String title, Date date){
+            this.id = id;
+            this.title = title;
+            this.date = date;
+        }
+    }
+    /**
+     * AsyncTask for DB loading tasks.
+     */
+    public class LoadDBTask extends AsyncTask<Void, InsertTask, Void> {
+
+        protected Void doInBackground(Void ... params) {
+
+            long id;
+            String title, dateStr;
+            Date date;
+
+            Cursor c = db.query("todo", new String[]{"_id", "title", "due"}, null, null, null, null, "_id ASC");
+            c.moveToFirst();
+
+            while (!c.isAfterLast()){
+                id = c.getLong(0);
+                title = c.getString(1);
+                dateStr = c.getString(2);
+
+                try {
+                    date = dateFormat.parse(dateStr);
+                } catch (ParseException ex){
+                    date = null;
+                }
+
+                InsertTask newTask = new InsertTask(id, title, date);
+
+                // Add new task and update screen.
+                publishProgress(newTask);
+
+                c.moveToNext();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(InsertTask ... task) {
+            addTask(task[0].id, task[0].title, task[0].date);
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+        }
+
+    }
+
     /** TodoListManagerActivity onCreate function */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,32 +112,33 @@ public class TodoListManagerActivity extends AppCompatActivity {
 
         dateFormat = new SimpleDateFormat("dd-MM-yyyy");
 
+//        // Delete Database
+//        this.deleteDatabase("todo_db.db");
+
         mDbHelper = new DBHelper(this);
+
         db = mDbHelper.getWritableDatabase();
 
-        Cursor c = db.query("todo", new String[]{"_id", "title", "due"}, null, null, null, null, "_id ASC");
-        c.moveToFirst();
-        long id;
-        String title, dateStr;
-        Date date;
-
-        while (!c.isAfterLast()){
-            id = c.getLong(0);
-            title = c.getString(1);
-            dateStr = c.getString(2);
-
-            try {
-                date = dateFormat.parse(dateStr);
-            } catch (ParseException ex){
-                date = null;
-            }
-
-            addTask(id, title, date);
-
-                c.moveToNext();
-        }
+        new LoadDBTask().execute();
 
         registerForContextMenu(listView);
+
+////         Create big database
+//        Date addDate = new Date();
+//        long addId;
+//        String taskName;
+//        try {
+//            addDate = dateFormat.parse("02-01-2001");
+//        } catch (ParseException ex){
+//            Log.v("BIG DATA", "parse problem");
+//        }
+//
+//        for (int i = 1; i<20000; i++){
+//            taskName = Integer.toString(i);
+//            addId = saveTask(taskName, addDate);
+//            addTask(addId, taskName, addDate);
+//        }
+
     }
 
     /** TodoListManagerActivity onCreateOptionsMenu function */

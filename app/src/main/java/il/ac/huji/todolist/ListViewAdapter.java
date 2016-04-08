@@ -6,7 +6,6 @@ package il.ac.huji.todolist;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -59,8 +58,6 @@ public class ListViewAdapter extends ArrayAdapter<ListRow> {
             Date nowDate = dateFormat.parse(now);
 
             if (taskDate.before(nowDate)){
-                Log.v("dateTxt", "" + dateTxt);
-                Log.v("now", now.toString());
                 txtTodoDueDate.setTextColor(Color.RED);
                 txtTodoTitle.setTextColor(Color.RED);
             } else {
